@@ -75,14 +75,40 @@ class Avalanche():
         # self.time_series = discretize_conflict_events(dt, dx, gridix, conflict_type)[['t','x']]
 
         self.time_series_CG_generator()
+        
+        #====================================== Added: Degree & Subset #======================================
+        #Subset size = degree from centroid
+        self.cell_ids = self.get_ids_from_centroid(size = 3, centroid = 7311)
+        
+        #degree for TE calculation in links
+        self.degree = 3
+        
+        self.polygons = self.polygons.loc[self.cell_ids]
+        self.time_series_CG_matrix = self.time_series_CG_matrix[self.cell_ids]
+        #====================================== Added: Degree & Subset #======================================
+        
         if shuffle_null:
             if iprint: print("Starting shuffling...")
             self.randomize()
 
         if setup:
-            self.setup_causal_graph()
+            self.setup_causal_graph() #default time shuffles: 100
             if self.iprint: print("Starting avalanche construction...")
-            self.construct()
+            #self.construct() #construction of avalanache
+    
+       #====================================== Added: Degree & Subset #======================================
+    def get_ids_from_centroid(self, size, centroid):
+        neighbors = self.polygons.loc[centroid].neighbors
+        if size == 1:
+            return [centroid]+neighbors
+        else:
+            for _ in range(size-1):
+                new_neighbors = []
+                for neighbor in neighbors:
+                    new_neighbors += self.polygons.loc[neighbor].neighbors
+                neighbors = list(set(new_neighbors))
+            return neighbors
+       #====================================== Added: Degree & Subset #======================================
     
     def randomize(self):
         """Randomize time index in each polygon.
