@@ -1,6 +1,7 @@
 /data
 /avalanches
 /voronoi_globe
+/voronoi_grids
 /workspace
 /misc  
 #ignore pycache
