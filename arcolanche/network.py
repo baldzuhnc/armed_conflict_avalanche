@@ -29,19 +29,59 @@ def links(time_series, neighbor_info_dataframe,
         element is a list of shuffled transfer entropies.
     """
 
-    # calculate transfer entropy between pairs of tiles
-    def polygon_pair_gen():
-        """Pairs of legitimate neighboring polygons."""
-        for pol_index, row in neighbor_info_dataframe.iterrows():
-            for n in row['neighbors']:
-                # only consider pairs of polygons that appear in the time series
-                if pol_index in time_series.columns and n in time_series.columns:
-                    yield (pol_index, n)
-    
-    pair_poly_te = iter_polygon_pair(polygon_pair_gen(),
-                                     number_of_shuffles, 
-                                     time_series)
+    ## ============ Changes ============ ###
+    # added second degree neighbors
+    # run on a subsetted dataframe (neighborhood around centroid with specific degree -> construct)
+    # works but is super inefficient: calculates all pariwise tuples first and then checks if there are duplicates
+    #refine
+    def polygon_pair_gen(degree):
+        if degree > 3:
+            raise ValueError("Degree has to be 1, 2 or 3")
+        
+        pairs = set() #remove duplicates (second degree = first degree neighbour)
+
+        for polid, entry in neighbor_info_dataframe.iterrows():
+            for first_degree in entry.neighbors:
+                #current polygon has to be in time series, neighbor has to be in time series and polygon dataframe (as polygon dataframe is subset)
+                if polid in time_series.columns and first_degree in neighbor_info_dataframe.index and first_degree in time_series.columns:
+                    pairs.add((polid, first_degree))
+                    
+                if degree == 2: #if not return
+                    for second_degree in neighbor_info_dataframe.loc[first_degree].neighbors:
+                        if second_degree in time_series.columns and second_degree in neighbor_info_dataframe.index:
+                            if second_degree != polid: #second degree can be initial index itself
+                                pairs.add((polid, second_degree))
+                        
+                        #strangely, third degree includes self links
+                        if degree == 3:
+                            for third_degree in neighbor_info_dataframe.loc[second_degree].neighbors:
+                                if third_degree in time_series.columns and third_degree in neighbor_info_dataframe.index:
+                                    if third_degree != polid:
+                                        pairs.add((polid, third_degree))
+                    
+        return pairs
+
+    pair_poly_te = iter_polygon_pair(polygon_pair_gen(degree),
+                                    number_of_shuffles, 
+                                    time_series)
     return pair_poly_te
+
+    ## =========== Changes ============= ###    
+    
+    # calculate transfer entropy between pairs of tiles
+    #def polygon_pair_gen():
+    #    """Pairs of legitimate neighboring polygons."""
+    #    for pol_index, row in neighbor_info_dataframe.iterrows(): #iterate over polygons dataframe, rows (indices are polygon indices), row['neighbors'] is a list of neighbors
+    #        for n in row['neighbors']: #get neighbors of a polygon
+    #            # only consider pairs of polygons that appear in the time series
+    #            if pol_index in time_series.columns and n in time_series.columns: #check if X is in time series and Y(neigbor) is in time series
+    #                yield (pol_index, n) #return pair of polygons
+    #
+    #pair_poly_te = iter_polygon_pair(polygon_pair_gen(),
+    #                                 number_of_shuffles, 
+    #                                 time_series)
+    #return pair_poly_te
+
 
 
 def self_links(time_series, number_of_shuffles):
