@@ -3,4 +3,7 @@
 /voronoi_globe
 /workspace
 /misc  
+#ignore pycache
 /__pycache__
+arcolanche/__pycache__
+arcolanche/te/__pycache__
