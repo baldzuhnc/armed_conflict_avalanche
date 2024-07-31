@@ -3,3 +3,4 @@
 /voronoi_globe
 /workspace
 /misc  
+!**/__pycache__/
