@@ -25,6 +25,8 @@ class Avalanche():
     def __init__(self, dt, dx,
                  gridix=0,
                  conflict_type='battles',
+                 degree = 2,
+                 size = None,
                  sig_threshold=95,
                  rng=None,
                  iprint=False,
@@ -59,6 +61,14 @@ class Avalanche():
         self.dx = dx
         self.gridix = gridix
         self.conflict_type = conflict_type
+        
+        #degree of connections and subsetting
+        self.degree = degree
+        
+        if size:
+            self.size = size
+        
+        
         self.sig_threshold = sig_threshold
         self.rng = rng or np.random
         self.iprint = iprint
@@ -78,13 +88,10 @@ class Avalanche():
         
         #====================================== Added: Degree & Subset #======================================
         #Subset size = degree from centroid
-        self.cell_ids = self.get_ids_from_centroid(size = 3, centroid = 7311)
-        
-        #degree for TE calculation in links
-        self.degree = 3
+        self.cell_ids = self.get_ids_from_centroid(size = self.size, centroid = 7311)
         
         self.polygons = self.polygons.loc[self.cell_ids]
-        self.time_series_CG_matrix = self.time_series_CG_matrix[self.cell_ids]
+    
         #====================================== Added: Degree & Subset #======================================
         
         if shuffle_null:
@@ -92,9 +99,9 @@ class Avalanche():
             self.randomize()
 
         if setup:
-            self.setup_causal_graph() #default time shuffles: 100
+            self.setup_causal_graph() #default time shuffles: 100, doesnt setup only creates links
             if self.iprint: print("Starting avalanche construction...")
-            #self.construct() #construction of avalanache
+            #self.construct() #construction of avalanche   
     
        #====================================== Added: Degree & Subset #======================================
     def get_ids_from_centroid(self, size, centroid):
@@ -140,11 +147,11 @@ class Avalanche():
         shuffles : int, 100
         """
 
-        self_edges = self_links(self.time_series_CG_matrix, number_of_shuffles=shuffles)
-        pair_edges = links(self.time_series_CG_matrix, self.polygons.drop('geometry' , axis=1), number_of_shuffles=shuffles)
+        self.self_edges = self_links(self.time_series_CG_matrix, number_of_shuffles=shuffles)
+        self.pair_edges = links(self.time_series_CG_matrix, self.polygons.drop('geometry' , axis=1), number_of_shuffles=shuffles, degree = self.degree)
         
-        self.causal_graph = CausalGraph()
-        self.causal_graph.setup(self_edges, pair_edges, sig_threshold=self.sig_threshold)
+        self.causal_graph = CausalGraph() #doesnt work yet with current setup
+        self.causal_graph.setup(self.self_edges, self.pair_edges, sig_threshold=self.sig_threshold)
 
     def time_series_CG_generator(self):
         """Generates a coarse-grained (depending on dt and dx) time series matrix for the 
