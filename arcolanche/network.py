@@ -3,6 +3,7 @@
 # Author : Eddie Lee, Niraj Kushwaha
 # ====================================================================================== #
 import networkx as nx
+from scipy.sparse import lil_matrix, csr_matrix
 from .transfer_entropy_func import *
 from .self_loop_entropy_func import *
 
@@ -10,7 +11,7 @@ from .utils import *
 
 
 def links(time_series, neighbor_info_dataframe,
-          number_of_shuffles):
+          number_of_shuffles, degree):
     """Calculates transfer entropy and identifies significant links between Voronoi
     neighbors assuming a 95% confidence interval.
 
@@ -29,59 +30,61 @@ def links(time_series, neighbor_info_dataframe,
         element is a list of shuffled transfer entropies.
     """
 
-    ## ============ Changes ============ ###
-    # added second degree neighbors
-    # run on a subsetted dataframe (neighborhood around centroid with specific degree -> construct)
-    # works but is super inefficient: calculates all pariwise tuples first and then checks if there are duplicates
-    #refine
-    def polygon_pair_gen(degree):
-        if degree > 3:
-            raise ValueError("Degree has to be 1, 2 or 3")
+    def get_tuples():
+        #add argument for time series check, or do later
+        # Initialize an empty sparse adjacency matrix of nxn
+        n = len(neighbor_info_dataframe)
+
+        adjacency_matrix = lil_matrix((n, n), dtype=int) #list of lists format
+
+        cell_id_to_position = {cell_id: pos for pos, cell_id in enumerate(neighbor_info_dataframe.index)}
+
+        #iterate over (column name, series), fill adjacency matrix
+        for cell_id, neighbors in neighbor_info_dataframe['neighbors'].items():
+            #current cell_id has to be in time_series (not in ts if zero activity)
+            if cell_id in time_series.columns:
+                for neighbor in neighbors:
+                    #neighbour has to be in polygons and time series
+                    if neighbor in cell_id_to_position and neighbor in time_series.columns: 
+                        #at position of cell_id and neighbor, set value to 1 -> iteratively fill adjacency matrix
+                        adjacency_matrix[cell_id_to_position[cell_id], cell_id_to_position[neighbor]] = 1
+
+        # Convert the adjacency matrix to CSR format for efficient matmul (also done implicitly)
+        adjacency_matrix = adjacency_matrix.tocsr()
+        adjacency_matrix_power = adjacency_matrix.copy()
+
         
-        pairs = set() #remove duplicates (second degree = first degree neighbour)
+        #fill connections dict first. keys: (cell1, cell2) values = degree of connection
+        connections = {}
 
-        for polid, entry in neighbor_info_dataframe.iterrows():
-            for first_degree in entry.neighbors:
-                #current polygon has to be in time series, neighbor has to be in time series and polygon dataframe (as polygon dataframe is subset)
-                if polid in time_series.columns and first_degree in neighbor_info_dataframe.index and first_degree in time_series.columns:
-                    pairs.add((polid, first_degree))
-                    
-                if degree == 2: #if not return
-                    for second_degree in neighbor_info_dataframe.loc[first_degree].neighbors:
-                        if second_degree in time_series.columns and second_degree in neighbor_info_dataframe.index:
-                            if second_degree != polid: #second degree can be initial index itself
-                                pairs.add((polid, second_degree))
-                        
-                        #strangely, third degree includes self links
-                        if degree == 3:
-                            for third_degree in neighbor_info_dataframe.loc[second_degree].neighbors:
-                                if third_degree in time_series.columns and third_degree in neighbor_info_dataframe.index:
-                                    if third_degree != polid:
-                                        pairs.add((polid, third_degree))
-                    
-        return pairs
+        for d in range(1, degree+1):
+            if d > 1:
+                adjacency_matrix_power = adjacency_matrix_power @ adjacency_matrix
 
-    pair_poly_te = iter_polygon_pair(polygon_pair_gen(degree),
+            #remove self loops
+            adjacency_matrix_power.setdiag(0)
+            #get indices of non-zero values
+            rows, cols = adjacency_matrix_power.nonzero()
+
+            for row, col in zip(rows, cols):
+                #add to connections if not already in
+                if (row, col) not in connections:
+                    connections[(row, col)] = d
+
+        #return tuples of (cell1, cell2, first degree of connection)
+        tuples = [(neighbor_info_dataframe.index[row], neighbor_info_dataframe.index[col], d) for (row, col), d in connections.items()]
+        
+        #if adj:
+        #    adjacency_df_power = pd.DataFrame(adjacency_matrix_power.toarray(), index=neighbor_info_dataframe.index, columns=neighbor_info_dataframe.index)
+        #    return tuples, adjacency_df_power
+        
+        return tuples
+
+
+    pair_poly_te = iter_polygon_pair(get_tuples(),
                                     number_of_shuffles, 
                                     time_series)
     return pair_poly_te
-
-    ## =========== Changes ============= ###    
-    
-    # calculate transfer entropy between pairs of tiles
-    #def polygon_pair_gen():
-    #    """Pairs of legitimate neighboring polygons."""
-    #    for pol_index, row in neighbor_info_dataframe.iterrows(): #iterate over polygons dataframe, rows (indices are polygon indices), row['neighbors'] is a list of neighbors
-    #        for n in row['neighbors']: #get neighbors of a polygon
-    #            # only consider pairs of polygons that appear in the time series
-    #            if pol_index in time_series.columns and n in time_series.columns: #check if X is in time series and Y(neigbor) is in time series
-    #                yield (pol_index, n) #return pair of polygons
-    #
-    #pair_poly_te = iter_polygon_pair(polygon_pair_gen(),
-    #                                 number_of_shuffles, 
-    #                                 time_series)
-    #return pair_poly_te
-
 
 
 def self_links(time_series, number_of_shuffles):
