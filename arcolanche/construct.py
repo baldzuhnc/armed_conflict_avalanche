@@ -25,7 +25,7 @@ class Avalanche():
     def __init__(self, dt, dx,
                  gridix=0,
                  conflict_type='battles',
-                 degree = 2,
+                 degree = 1,
                  size = None,
                  sig_threshold=95,
                  rng=None,
@@ -56,6 +56,7 @@ class Avalanche():
         """
 
         assert 0<=sig_threshold<100
+        assert degree<4
 
         self.dt = dt
         self.dx = dx
@@ -64,10 +65,6 @@ class Avalanche():
         
         #degree of connections and subsetting
         self.degree = degree
-        
-        if size:
-            self.size = size
-        
         
         self.sig_threshold = sig_threshold
         self.rng = rng or np.random
@@ -86,12 +83,17 @@ class Avalanche():
 
         self.time_series_CG_generator()
         
-        #====================================== Added: Degree & Subset #======================================
-        #Subset size = degree from centroid
-        self.cell_ids = self.get_ids_from_centroid(size = self.size, centroid = 7311)
-        
-        self.polygons = self.polygons.loc[self.cell_ids]
-    
+        #====================================== If size provided, subset #======================================
+        #if size is provided to avalanche construction: construct subset from centroid 7311 of size
+        if size:
+            #filter polygons dataframe
+            self.cell_ids = self.get_ids_from_centroid(size = size, centroid = 7311)
+            self.polygons = self.polygons.loc[self.cell_ids]
+            
+            #filter timeseries dataframe
+            filtered_ids = [those_ids in self.cell_ids for those_ids in self.time_series_CG_matrix.columns]
+            self.time_series_CG_matrix = self.time_series_CG_matrix.loc[:,filtered_ids]
+
         #====================================== Added: Degree & Subset #======================================
         
         if shuffle_null:
