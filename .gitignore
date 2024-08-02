@@ -4,6 +4,8 @@
 /voronoi_grids
 /workspace
 /misc  
+utils_CB.py
+pipeline_CB.ipynb
 #ignore pycache
 /__pycache__
 arcolanche/__pycache__
