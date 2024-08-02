@@ -6,6 +6,9 @@
 /misc  
 utils_CB.py
 pipeline_CB.ipynb
+
+old_code.py
+
 #ignore pycache
 /__pycache__
 arcolanche/__pycache__
