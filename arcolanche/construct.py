@@ -56,7 +56,6 @@ class Avalanche():
         """
 
         assert 0<=sig_threshold<100
-        assert degree<4
 
         self.dt = dt
         self.dx = dx
