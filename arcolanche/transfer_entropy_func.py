@@ -129,7 +129,7 @@ class TransferEntropy():
     def shuffle_calc(self, x, y):
         """Shuffle both time series in the same way and return naive transfer entropy estimate.
 
-        Returns
+        Returns 
         -------
         float
             TE in bits.
@@ -292,6 +292,6 @@ def joint_distribution_yT_yt_xt_new(time_series_two_pols):
     return distribution_array
 
 def te_calculator(distribution_data):
-    yT_yt_xt , yT_yt , yt_xt , y = distribution_data
+    yT_yt_xt , yT_yt , yt_xt ,   = distribution_data
     return (yT_yt_xt * np.log2((yT_yt_xt * y) / (yT_yt * yt_xt)))
 
