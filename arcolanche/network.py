@@ -6,84 +6,125 @@ import networkx as nx
 from scipy.sparse import lil_matrix, csr_matrix
 from .transfer_entropy_func import *
 from .self_loop_entropy_func import *
+from .triple_transfer_entropy_func import *
 
 from .utils import *
 
 
-def links(time_series, neighbor_info_dataframe,
-          number_of_shuffles, degree):
-    """Calculates transfer entropy and identifies significant links between Voronoi
-    neighbors assuming a 95% confidence interval.
-
-    Parameters
-    ----------
-    time_series : pd.DataFrame
-    neighbor_info_dataframe : pd.DataFrame
-    number_of_shuffles : int
+def get_adjacency_matrix(neighbor_info_dataframe, time_series):
+    '''
+    Generate an adjacency matrix based on the neighbor information and time series data. Can be used to calculate higher degrees in get_tuples.
+    Parameters:
+    neighbor_info_dataframe (DataFrame): A DataFrame containing information about the neighbors of each cell.
+    time_series (DataFrame): A DataFrame containing time series data.
+    Returns:
+    adjacency_matrix (lil_matrix): A sparse adjacency matrix representing the connections between cells.
     
-    Returns
-    -------
-    dict
-        dict with keys as directed edge and
-        values as tuple where first element is
-        the transfer entropy and the second
-        element is a list of shuffled transfer entropies.
-    """
+    '''
+    
+    # Initialize an empty sparse adjacency matrix of nxn
+    n = len(neighbor_info_dataframe)
 
-    def get_tuples():
-        #add argument for time series check, or do later
-        # Initialize an empty sparse adjacency matrix of nxn
-        n = len(neighbor_info_dataframe)
+    adjacency_matrix = lil_matrix((n, n), dtype=int) #list of lists format
 
-        adjacency_matrix = lil_matrix((n, n), dtype=int) #list of lists format
+    cell_id_to_position = {cell_id: pos for pos, cell_id in enumerate(neighbor_info_dataframe.index)}
 
-        cell_id_to_position = {cell_id: pos for pos, cell_id in enumerate(neighbor_info_dataframe.index)}
+    #iterate over (column name, series), fill adjacency matrix
+    for cell_id, neighbors in neighbor_info_dataframe['neighbors'].items():
+        #current cell_id has to be in time_series (not in ts if zero activity)
+        if cell_id in time_series.columns:
+            for neighbor in neighbors:
+                #neighbour has to be in polygons and time series
+                if neighbor in cell_id_to_position and neighbor in time_series.columns: 
+                    #at position of cell_id and neighbor, set value to 1 -> iteratively fill adjacency matrix
+                    adjacency_matrix[cell_id_to_position[cell_id], cell_id_to_position[neighbor]] = 1
+    
+    return adjacency_matrix
 
-        #iterate over (column name, series), fill adjacency matrix
-        for cell_id, neighbors in neighbor_info_dataframe['neighbors'].items():
-            #current cell_id has to be in time_series (not in ts if zero activity)
-            if cell_id in time_series.columns:
-                for neighbor in neighbors:
-                    #neighbour has to be in polygons and time series
-                    if neighbor in cell_id_to_position and neighbor in time_series.columns: 
-                        #at position of cell_id and neighbor, set value to 1 -> iteratively fill adjacency matrix
-                        adjacency_matrix[cell_id_to_position[cell_id], cell_id_to_position[neighbor]] = 1
 
-        # Convert the adjacency matrix to CSR format for efficient matmul (also done implicitly)
-        adjacency_matrix = adjacency_matrix.tocsr()
-        adjacency_matrix_power = adjacency_matrix.copy()
+def get_tuples(neighbor_info_dataframe, time_series, degree):
+    
+    #first degree connections
+    adjacency_matrix = get_adjacency_matrix(neighbor_info_dataframe, time_series)
+    
+    # Convert the adjacency matrix to CSR format for efficient matmul (also done implicitly)
+    adjacency_matrix = adjacency_matrix.tocsr()
+    adjacency_matrix_power = adjacency_matrix.copy()
 
+    #fill connections dict first. keys: (cell1, cell2) values = degree of connection
+    connections = {}
+
+    #higher order connections
+    for d in range(1, degree+1):
+        if d > 1:
+            adjacency_matrix_power = adjacency_matrix_power @ adjacency_matrix
+
+        #remove self loops
+        adjacency_matrix_power.setdiag(0)
+        #get indices of non-zero values
+        rows, cols = adjacency_matrix_power.nonzero()
+
+        for row, col in zip(rows, cols):
+            #add to connections if not already in
+            if (row, col) not in connections:
+                connections[(row, col)] = d
+
+    #return tuples of (cell1, cell2, first degree of connection)
+    tuples = [(neighbor_info_dataframe.index[row], neighbor_info_dataframe.index[col], d) for (row, col), d in connections.items()]
+    
+    return tuples
+
+
+def get_triples(time_series, neighbor_info_dataframe):
+    
+    n = len(neighbor_info_dataframe)
+    
+    # First degree connections
+    adjacency_matrix = get_adjacency_matrix(neighbor_info_dataframe, time_series)
+    
+    # Remove self loops
+    adjacency_matrix.setdiag(0)
+    
+    # Get indices of non-zero values
+    rows, cols = adjacency_matrix.nonzero()
+
+    # Convert the adjacency matrix to a dense format for easier manipulation
+    dense_adj_matrix = adjacency_matrix.todense()
+
+    # Set to store unique triples
+    unique_triples = set()
+
+    # Find triples
+    for i in range(n):
+        for j in range(n):
+            # If i and j are neighbors
+            if dense_adj_matrix[i, j] == 1:  # If j is a neighbor of i
+                for k in range(n):
+                    if dense_adj_matrix[i, k] == 1 and dense_adj_matrix[j, k] == 1:  # k is a neighbor of i and j
+                        # Create a sorted tuple to ensure order doesn't matter
+                        triple = tuple(sorted((neighbor_info_dataframe.index[i], neighbor_info_dataframe.index[j], neighbor_info_dataframe.index[k])))
+                        unique_triples.add(triple)
+
+    # Convert set to list to return the result
+    return list(unique_triples)
+
+    
+
+
+def links(time_series, neighbor_info_dataframe, number_of_shuffles, degree, triples):
+    
+    if triples:
+        #degree doesnt matter here, only works for tuples
+        triples = get_triples(time_series, neighbor_info_dataframe)
+        triple_poly_te = iter_polygon_triple(triples, number_of_shuffles, time_series,
+                      n_cpu = None)
         
-        #fill connections dict first. keys: (cell1, cell2) values = degree of connection
-        connections = {}
-
-        for d in range(1, degree+1):
-            if d > 1:
-                adjacency_matrix_power = adjacency_matrix_power @ adjacency_matrix
-
-            #remove self loops
-            adjacency_matrix_power.setdiag(0)
-            #get indices of non-zero values
-            rows, cols = adjacency_matrix_power.nonzero()
-
-            for row, col in zip(rows, cols):
-                #add to connections if not already in
-                if (row, col) not in connections:
-                    connections[(row, col)] = d
-
-        #return tuples of (cell1, cell2, first degree of connection)
-        tuples = [(neighbor_info_dataframe.index[row], neighbor_info_dataframe.index[col], d) for (row, col), d in connections.items()]
+        return triple_poly_te
+    
+    else:
+        tuples = get_tuples(neighbor_info_dataframe, time_series, degree)
+        pair_poly_te = iter_polygon_pair(tuples, number_of_shuffles, time_series)
         
-        #if adj:
-        #    adjacency_df_power = pd.DataFrame(adjacency_matrix_power.toarray(), index=neighbor_info_dataframe.index, columns=neighbor_info_dataframe.index)
-        #    return tuples, adjacency_df_power
-        
-        return tuples
-
-
-    pair_poly_te = iter_polygon_pair(get_tuples(),
-                                    number_of_shuffles, 
-                                    time_series)
     return pair_poly_te
 
 

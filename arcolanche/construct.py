@@ -27,6 +27,7 @@ class Avalanche():
                  conflict_type='battles',
                  degree = 1,
                  size = None,
+                 triples = False,
                  sig_threshold=95,
                  rng=None,
                  iprint=False,
@@ -62,8 +63,9 @@ class Avalanche():
         self.gridix = gridix
         self.conflict_type = conflict_type
         
-        #degree of connections and subsetting
+        #degree of connections and triples option
         self.degree = degree
+        self.triples = triples
         
         self.sig_threshold = sig_threshold
         self.rng = rng or np.random
@@ -149,9 +151,13 @@ class Avalanche():
         """
 
         self.self_edges = self_links(self.time_series_CG_matrix, number_of_shuffles=shuffles)
-        self.pair_edges = links(self.time_series_CG_matrix, self.polygons.drop('geometry' , axis=1), number_of_shuffles=shuffles, degree = self.degree)
+        self.pair_edges = links(self.time_series_CG_matrix, 
+                                self.polygons.drop('geometry' , axis=1), 
+                                number_of_shuffles=shuffles, 
+                                degree = self.degree, 
+                                triples = self.triples) #triples
         
-        self.causal_graph = CausalGraph() #doesnt work yet with current setup
+        self.causal_graph = CausalGraph() 
         self.causal_graph.setup(self.self_edges, self.pair_edges, sig_threshold=self.sig_threshold)
 
     def time_series_CG_generator(self):
@@ -192,7 +198,7 @@ class Avalanche():
             event_t.append([t])
 
             # add all the events sharing the starting time and spatial bin
-            for i in tx_group.groups[(t,x)]:
+            for i in tx_group.groups[(t,x)]: #(t, x): [events]
                 try:
                     remaining_ix.remove(i)
                     ava[-1].append(i)
@@ -209,7 +215,7 @@ class Avalanche():
 
                 # add successors which must be at the next time step
                 for n in self.causal_graph.neighbors(x):
-                    if (t+1,n) in tx_group.groups.keys():
+                    if (t+1,n) in tx_group.groups.keys(): #(t, x): [events] .keys() -> (t,x). If for neighbor, event exists in grouped df
                         # remove events such that they are not added to another avalanche
                         added = False
                         for i in tx_group.groups[(t+1,n)]:
