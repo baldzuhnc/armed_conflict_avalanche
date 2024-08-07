@@ -2,11 +2,40 @@ from .utils import *
 #from multiprocessing import Pool, cpu_count
 
 
-def calc_two_te(three_tuple):
-    x = three_tuple[0]
-    y = three_tuple[1]
-    z = three_tuple[2]
 
+def iter_polygon_triple(polygon_triple, number_of_shuffles, time_series,
+                      n_cpu=None):
+    
+    """
+    Returns
+    -------
+    dict
+        Key is directed edge between two polygons Y,Z and a polygon X. Value is list (TE, TE shuffles).
+    """
+
+    # calculate transfer entropy for a single pair of tiles
+    def loop_wrapper(triple):
+        
+        #unpack triple of polygon ids
+        x = time_series[triple[0]].values
+        y = time_series[triple[1]].values
+        z = time_series[triple[2]].values
+        
+        #calculate te and shuffles
+        return triple, (calc_two_te(x,y,z),
+                      [shuffle_calc_two_te(x,y,z) for i in range(number_of_shuffles)])
+    
+    if n_cpu is None:
+        triple_te = {}
+        for triple in polygon_triple:
+            triple_te[triple] = loop_wrapper(triple)[1]
+    else:
+        # note that each job is quite fast, so large chunks help w/ speed
+        with Pool() as pool:
+            triple_te = dict(pool.map(loop_wrapper, polygon_triple, chunksize=200))
+    return triple_te
+
+def calc_two_te(x,y,z):
     xt = x[1:]
     xt1 = x[:-1]
 
@@ -56,9 +85,7 @@ def calc_two_te(three_tuple):
     
     return te
 
-def shuffle_calc_two_te(three_tuple):
-    y = three_tuple[1]
-    z = three_tuple[2]
+def shuffle_calc_two_te(x,y,z):
 
     y_rand_index = np.random.permutation(y.size)
     z_rand_index = np.random.permutation(z.size)
@@ -66,8 +93,6 @@ def shuffle_calc_two_te(three_tuple):
     y_shuffled = y[y_rand_index]
     z_shuffled = z[z_rand_index]
     
-    shuffled_three_tuple = (three_tuple[0], y_shuffled, z_shuffled)
-    
-    res = calc_two_te(shuffled_three_tuple)
+    res = calc_two_te(x, y_shuffled, z_shuffled)
     
     return res
