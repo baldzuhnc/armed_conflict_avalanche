@@ -31,7 +31,8 @@ class Avalanche():
                  sig_threshold=95,
                  rng=None,
                  iprint=False,
-                 setup=True,
+                 setup_causalgraph=True,
+                 construct_avalanche=True,
                  shuffle_null=False,
                  year_range=False):
         """
@@ -104,10 +105,10 @@ class Avalanche():
             if iprint: print("Starting shuffling...")
             self.randomize()
 
-        if setup:
+        if setup_causalgraph:
             self.setup_causal_graph() #default time shuffles: 100, doesnt setup only creates links
-            if self.iprint: print("Starting avalanche construction...")
-            self.construct() #construction of avalanche   
+            if construct_avalanche:
+                self.construct() #construction of avalanche   
     
     
     
