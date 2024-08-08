@@ -99,16 +99,15 @@ class Avalanche():
             filtered_ids = [those_ids in self.cell_ids for those_ids in self.time_series_CG_matrix.columns]
             self.time_series_CG_matrix = self.time_series_CG_matrix.loc[:, filtered_ids]
 
-        #====================================== Added: Degree & Subset #======================================
+        #====================================== ######################## ======================================
         
         if shuffle_null:
             if iprint: print("Starting shuffling...")
             self.randomize()
-
         if setup_causalgraph:
             self.setup_causal_graph() #default time shuffles: 100, doesnt setup only creates links
-            if construct_avalanche:
-                self.construct() #construction of avalanche   
+        if construct_avalanche:
+            self.construct() #construction of avalanche   
     
     
     
@@ -238,7 +237,7 @@ class Avalanche():
                             # and only need to follow up on one in the group of successors
                             checked.pop(-1)
                             if not ava[-1][-1] in checked:
-                                to_check.add(ava[-1][-1])
+                                to_check.add(ava[-1][-1]) #last avalanche, last event
 
                 # add predecessors which must be at the previous time step
                 for n in self.causal_graph.predecessors(x):
