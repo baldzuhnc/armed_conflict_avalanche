@@ -58,7 +58,7 @@ def calculate_significant_edges(self_edges, pair_edges, summary = False):
         return significant_edges
 
 def plot_save_ecdf(t, s,  significant_edges):
-    #get TEs
+    #get TEss
     for d in range(1, degree+1):
         sig = significant_edges[d]
         tes = [te for tuples, te in sig]

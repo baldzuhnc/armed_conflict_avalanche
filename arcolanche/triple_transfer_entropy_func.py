@@ -75,13 +75,16 @@ def calc_two_te(x,y,z):
     p_zt_yt_xt = joint.sum(axis = 3) #sum over xt1
 
     #Step 3: Conditional distributions
-    p_xt1_given_xt = p_xt_xt1/p_xt[:, np.newaxis] #p(xt1|xt) = p(xt1, xt)/p(xt) #2x2, add axis for explicit broadasting: colwise!, axes are (xt, xt1)
+    np.seterr(divide='ignore', invalid='ignore')
+    p_xt1_given_xt = p_xt_xt1/p_xt[:, np.newaxis] 
+    #p(xt1|xt) = p(xt1, xt)/p(xt) #2x2, add axis for explicit broadasting: colwise!, axes are (xt, xt1)
+    #any division by zero will result in NaN instead of raising an error.
 
     p_xt1_given_zt_yt_xt = joint/p_zt_yt_xt[:, :, :, np.newaxis] #p(xt1|zt, yt, xt) = p(xt1, zt, yt, xt)/p(zt, yt, xt), add axis for explicit broadasting: colwise!
 
     #Step 4: Transfer Entropy
-    np.seterr(divide='ignore', invalid='ignore')
     te = np.nansum(joint * np.log2(p_xt1_given_zt_yt_xt/p_xt1_given_xt[np.newaxis, np.newaxis, :, :])) #calculate sum only for terms which dont include log(0)
+    #sum over all elements, ignoring any NaN values.
     
     return te
 
