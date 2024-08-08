@@ -84,16 +84,19 @@ class Avalanche():
 
         self.time_series_CG_generator()
         
+        
+        
         #====================================== If size provided, subset #======================================
         #if size is provided to avalanche construction: construct subset from centroid 7311 of size
+        # Avalanche construction will not work if size is provided
         if size:
-            #filter polygons dataframe
-            self.cell_ids = self.get_ids_from_centroid(size = size, centroid = 7311)
+            # filter polygons dataframe
+            self.cell_ids = self.get_ids_from_centroid(size=size, centroid=7311)
             self.polygons = self.polygons.loc[self.cell_ids]
-            
-            #filter timeseries dataframe
+
+            # filter timeseries dataframe
             filtered_ids = [those_ids in self.cell_ids for those_ids in self.time_series_CG_matrix.columns]
-            self.time_series_CG_matrix = self.time_series_CG_matrix.loc[:,filtered_ids]
+            self.time_series_CG_matrix = self.time_series_CG_matrix.loc[:, filtered_ids]
 
         #====================================== Added: Degree & Subset #======================================
         
@@ -104,21 +107,22 @@ class Avalanche():
         if setup:
             self.setup_causal_graph() #default time shuffles: 100, doesnt setup only creates links
             if self.iprint: print("Starting avalanche construction...")
-            #self.construct() #construction of avalanche   
+            self.construct() #construction of avalanche   
     
-       #====================================== Added: Degree & Subset #======================================
+    
+    
     def get_ids_from_centroid(self, size, centroid):
         neighbors = self.polygons.loc[centroid].neighbors
         if size == 1:
-            return [centroid]+neighbors
+            return [centroid] + neighbors
         else:
-            for _ in range(size-1):
+            for _ in range(size - 1):
                 new_neighbors = []
                 for neighbor in neighbors:
                     new_neighbors += self.polygons.loc[neighbor].neighbors
                 neighbors = list(set(new_neighbors))
             return neighbors
-       #====================================== Added: Degree & Subset #======================================
+    
     
     def randomize(self):
         """Randomize time index in each polygon.
