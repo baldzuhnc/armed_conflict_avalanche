@@ -20,7 +20,7 @@ from keplergl import KeplerGl
 degree = int(sys.argv[1])
 #dt = int(sys.argv[2])
 #dx = int(sys.argv[3])
-
+ 
 #Functions
 def calculate_significant_edges(self_edges, pair_edges, summary = False):
         
@@ -82,7 +82,6 @@ def plot_save_ecdf(t, s,  significant_edges):
     plt.savefig(f"Results/TE_CDF_d{degree}_dt{t}_dx{s}.png")
     plt.close()
 
-
 def save_map(t, s, polygons, significant_edges): 
     map_ = KeplerGl()
     
@@ -125,12 +124,13 @@ gridix = 3
 dt = [32, 64, 128]
 dx = [320]
 
+
 for t in tqdm(dt):
     for s in dx:
         print(f'Computing dt={t} and dx={s}')
         start_time = time.time()
         #Creates avalanche object, only creates causal graph
-        ava = Avalanche(dt = t, dx = s, gridix=gridix, degree=degree, setup=True)
+        ava = Avalanche(dt = t, dx = s, gridix=gridix, degree=degree, setup_causalgraph=True, construct_avalanche=False)
 
         #save graph
         G = ava.causal_graph
