@@ -29,6 +29,8 @@ class Avalanche():
                  size = None,
                  triples = False,
                  sig_threshold=95,
+                 mi_connections = False,
+                 mi_threshold = 0.4,   
                  rng=None,
                  iprint=False,
                  setup_causalgraph=True,
@@ -67,6 +69,10 @@ class Avalanche():
         #degree of connections and triples option
         self.degree = degree
         self.triples = triples
+        
+        #options for mutual information calculation
+        self.mi_connections = mi_connections
+        self.mi_threshold = mi_threshold
         
         self.sig_threshold = sig_threshold
         self.rng = rng or np.random
@@ -108,7 +114,6 @@ class Avalanche():
             self.setup_causal_graph() #default time shuffles: 100, doesnt setup only creates links
         if construct_avalanche:
             self.construct() #construction of avalanche   
-    
     
     
     def get_ids_from_centroid(self, size, centroid):
@@ -159,9 +164,13 @@ class Avalanche():
                                 self.polygons.drop('geometry' , axis=1), 
                                 number_of_shuffles=shuffles, 
                                 degree = self.degree, 
+                                mi_connections=self.mi_connections,
+                                mi_threshold = self.mi_threshold,
                                 triples = self.triples) #triples
         
+        
         self.causal_graph = CausalGraph() 
+        
         self.causal_graph.setup(self.self_edges, self.pair_edges, sig_threshold=self.sig_threshold)
 
     def time_series_CG_generator(self):
