@@ -67,8 +67,8 @@ def get_adjancency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold)
     # Update the adjacency matrix with MI connections
     for cell_id1, cell_id2 in highest_mi_tuples:
         if cell_id1 in cell_id_to_position and cell_id2 in cell_id_to_position:
-            adjacency_matrix[cell_id_to_position[cell_id1], cell_id_to_position[cell_id2]] = 1
-    
+            adjacency_matrix[cell_id_to_position[cell_id1], cell_id_to_position[cell_id2]] = 1 # Set the connection from cell_id1 to cell_id2
+            adjacency_matrix[cell_id_to_position[cell_id2], cell_id_to_position[cell_id1]] = 1 # Set the connection from cell_id2 to cell_id1
     
     return adjacency_matrix
 
