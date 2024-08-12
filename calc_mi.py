@@ -51,7 +51,7 @@ def calculate_significant_edges(self_edges, pair_edges, summary = False):
 
  
  
-def save_map(dt, dx, polygons, significant_edges): 
+def save_map(t, s, polygons, significant_edges): 
     map_ = KeplerGl()
     
     for d in range(1, degree+1):
@@ -80,10 +80,10 @@ def save_map(dt, dx, polygons, significant_edges):
         map_.add_data(data=json.loads(lines_geojson), name=f'{d}st degree')
     
     polygons_geojson = polygons.to_json()
-    map_.add_data(data=json.loads(polygons_geojson), name=f'Polygons, dx={dx}')
+    map_.add_data(data=json.loads(polygons_geojson), name=f'Polygons, dx={s}')
     
     # Save the map as HTML or display it
-    map_.save_to_html(file_name=f'Results/kepler_mi{mi_threshold}_d{degree}_dt{dt}_dx{dx}.html')
+    map_.save_to_html(file_name=f'Results/kepler_mi{mi_threshold}_d{degree}_dt{t}_dx{s}.html')
 
  
 # ==================== # RUN # ==================== #
@@ -96,8 +96,6 @@ mi_threshold = 0.05
 dt = [32, 64, 128]
 dx = [320]
 
-
-print(f'Computing dt={t} and dx={s}')
 start_time = time.time()
 
 for t in tqdm.tqdm(dt):
@@ -127,7 +125,7 @@ for t in tqdm.tqdm(dt):
 
         significant_edges = calculate_significant_edges(self_edges, pair_edges, summary = False)
 
-        save_map(dt, dx, ava_mi.polygons, significant_edges)
+        save_map(t, s, ava_mi.polygons, significant_edges)
         
         end_time = time.time()    
         print(f"dt:{t}, Time taken: {int((end_time - start_time) / 60)} minutes {int((end_time - start_time) % 60)} seconds")
