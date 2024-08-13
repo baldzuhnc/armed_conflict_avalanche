@@ -42,37 +42,6 @@ def get_adjacency_matrix(neighbor_info_dataframe, time_series):
     return adjacency_matrix
 
 
-def get_adjancency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold):
-    
-    # mi connections
-    highest_mi_tuples = calculate_mi_tuples(time_series, mi_threshold)
-    
-    # Initialize an empty sparse adjacency matrix of nxn
-    n = len(neighbor_info_dataframe)
-
-    adjacency_matrix = lil_matrix((n, n), dtype=int) #list of lists format
-
-    cell_id_to_position = {cell_id: pos for pos, cell_id in enumerate(neighbor_info_dataframe.index)}
-
-    #iterate over (column name, series), fill adjacency matrix
-    for cell_id, neighbors in neighbor_info_dataframe['neighbors'].items():
-        #current cell_id has to be in time_series (not in ts if zero activity)
-        if cell_id in time_series.columns:
-            for neighbor in neighbors:
-                #neighbour has to be in polygons and time series
-                if neighbor in cell_id_to_position and neighbor in time_series.columns: 
-                    #at position of cell_id and neighbor, set value to 1 -> iteratively fill adjacency matrix
-                    adjacency_matrix[cell_id_to_position[cell_id], cell_id_to_position[neighbor]] = 1
-    
-    # Update the adjacency matrix with MI connections
-    for cell_id1, cell_id2 in highest_mi_tuples:
-        if cell_id1 in cell_id_to_position and cell_id2 in cell_id_to_position:
-            adjacency_matrix[cell_id_to_position[cell_id1], cell_id_to_position[cell_id2]] = 1 # Set the connection from cell_id1 to cell_id2
-            adjacency_matrix[cell_id_to_position[cell_id2], cell_id_to_position[cell_id1]] = 1 # Set the connection from cell_id2 to cell_id1
-    
-    return adjacency_matrix
-
-
 def calculate_mi_tuples(time_series, threshold):
     
     def get_mi_tuples(time_series):
@@ -152,6 +121,37 @@ def calculate_mi_tuples(time_series, threshold):
     mi_values = iter_polygon_tuples(mi_tuples, 100, time_series, n_cpu=None)
     highest_mi_tuples = extract_significant_tuples(mi_values, sig=95, threshold=threshold)
     return highest_mi_tuples
+
+
+def get_adjancency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold):
+    
+    # mi connections
+    highest_mi_tuples = calculate_mi_tuples(time_series, mi_threshold)
+    
+    # Initialize an empty sparse adjacency matrix of nxn
+    n = len(neighbor_info_dataframe)
+
+    adjacency_matrix = lil_matrix((n, n), dtype=int) #list of lists format
+
+    cell_id_to_position = {cell_id: pos for pos, cell_id in enumerate(neighbor_info_dataframe.index)}
+
+    #iterate over (column name, series), fill adjacency matrix
+    for cell_id, neighbors in neighbor_info_dataframe['neighbors'].items():
+        #current cell_id has to be in time_series (not in ts if zero activity)
+        if cell_id in time_series.columns:
+            for neighbor in neighbors:
+                #neighbour has to be in polygons and time series
+                if neighbor in cell_id_to_position and neighbor in time_series.columns: 
+                    #at position of cell_id and neighbor, set value to 1 -> iteratively fill adjacency matrix
+                    adjacency_matrix[cell_id_to_position[cell_id], cell_id_to_position[neighbor]] = 1
+    
+    # Update the adjacency matrix with MI connections
+    for cell_id1, cell_id2 in highest_mi_tuples:
+        if cell_id1 in cell_id_to_position and cell_id2 in cell_id_to_position:
+            adjacency_matrix[cell_id_to_position[cell_id1], cell_id_to_position[cell_id2]] = 1 # Set the connection from cell_id1 to cell_id2
+            adjacency_matrix[cell_id_to_position[cell_id2], cell_id_to_position[cell_id1]] = 1 # Set the connection from cell_id2 to cell_id1
+    
+    return adjacency_matrix
 
 
 def get_tuples(neighbor_info_dataframe, time_series, degree):
@@ -249,9 +249,6 @@ def get_triples(time_series, neighbor_info_dataframe):
 
     # Convert set to list to return the result
     return list(unique_triples)
-
-
-
 
 
 def links(time_series, neighbor_info_dataframe, number_of_shuffles, degree, mi_connections, mi_threshold, triples):
