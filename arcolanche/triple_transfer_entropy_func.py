@@ -1,3 +1,9 @@
+# ====================================================================================== #
+# Module for computing transfer entropy between three polygons from conflict data.
+# 
+# Author : Clemens Baldzuhn
+# ====================================================================================== #
+
 from .utils import *
 #from multiprocessing import Pool, cpu_count
 

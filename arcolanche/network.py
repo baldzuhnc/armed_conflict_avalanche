@@ -1,6 +1,6 @@
 # ====================================================================================== #
 # Causal avalanche network methods using transfer entropy.
-# Author : Eddie Lee, Niraj Kushwaha
+# Author : Eddie Lee, Niraj Kushwaha, Clemens Baldzuhn
 # ====================================================================================== #
 import networkx as nx
 from scipy.sparse import lil_matrix, csr_matrix

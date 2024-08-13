@@ -1,3 +1,8 @@
+# ====================================================================================== #
+# Utility functions for the avalanche project.
+# Author: Clemens Baldzuhn
+# ====================================================================================== #
+
 import os
 os.chdir('/home/clemens/armed_conflict_avalanche')
 import warnings
@@ -13,8 +18,12 @@ import matplotlib.pyplot as plt
 
 import scipy.stats as stats
 
+#plotting
 import cartopy.feature as cfeature
+from cartopy.feature import ShapelyFeature
+from cartopy.io.shapereader import Reader
 import cartopy.crs as ccrs
+import geopandas as gpd
 
 import pyvinecopulib as pv
 
@@ -105,6 +114,101 @@ def plot_cells(cell_ids, scale, conflict_type, verbose=False):
     ax.set_extent(set_ax("All"))
     
     
+# plot avalanches    
+def plot_avalanches(avalanche, dt, dx, gridix, conflict_type, degree, save=False):
+    
+    # Combine conflict events with avalanches
+    load_pickle(f"avalanches/{conflict_type}/gridix_{gridix}/te/conflict_ev_{str(dt)}_{str(dx)}.p")
+    ava_event = avalanche['ava_event']
+    avalanche_number_dict = dict.fromkeys(conflict_ev.index, 0)
+
+    for ava, index in zip(ava_event, range(len(ava_event))):
+        for event in ava:
+            avalanche_number_dict[event] = index
+
+    conflict_ev["avalanche_number"] = avalanche_number_dict.values()
+    # Combine conflict events with avalanches
+    
+    
+    #Plot
+    african_countries_iso = [
+        "DZA", "AGO", "BEN", "BWA", "BFA", "BDI", "CPV", "CMR", "CAF", "TCD",
+        "COM", "COG", "COD", "CIV", "DJI", "EGY", "GNQ", "ERI", "SWZ", "ETH",
+        "GAB", "GMB", "GHA", "GIN", "GNB", "KEN", "LSO", "LBR", "LBY", "MDG",
+        "MWI", "MLI", "MRT", "MUS", "MAR", "MOZ", "NAM", "NER", "NGA", "RWA",
+        "STP", "SEN", "SYC", "SLE", "SOM", "ZAF", "SSD", "SDN", "TZA", "TGO",
+        "TUN", "UGA", "ZMB", "ZWE"
+    ]
+
+    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+    world = world[['continent', 'geometry']]
+    continents = world.dissolve(by='continent')
+    africa = gpd.GeoDataFrame(continents["geometry"]["Africa"], geometry=0)
+
+    african_countries_shp = gpd.read_file("data/africa-outline-with-countries_6.geojson")
+
+    dx = dx
+    gridix = gridix
+    conflict_type = "all"
+
+    #conflict_ev = load_conflict_ev(dx, gridix, conflict_type) #i dont have this function
+    avas = conflict_ev.groupby("avalanche_number") #avalanche number in conflict ev?
+
+    ava_ixs = avas.size()[avas.size() > 1].index
+
+    points = []
+    colors = []
+
+    for ava_ix in ava_ixs:
+        color = (np.random.random(), np.random.random(), np.random.random())
+        ava = avas.get_group(ava_ix)
+        ava = ava[~ava.duplicated(subset=["latitude", "longitude"], keep='first')]
+        points += list(ava.geometry)
+        colors += [color for _ in range(len(ava))]
+
+    data = {"geometry": points, "color": colors}
+    data = gpd.GeoDataFrame(data, geometry="geometry")
+
+    country = "all"
+
+    if country == "all":
+        fig = plt.figure(figsize=(15, 15))
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        coastline_width = 0.6
+        country_border_width = 0.2
+        alpha = 0.2
+        markersize = 5
+
+        africa.plot(ax=ax, linewidth=coastline_width, edgecolor='black', facecolor='none')
+        for ISO3 in african_countries_iso:
+            african_countries_shp[african_countries_shp["iso_a3"] == ISO3].plot(ax=ax, linewidth=country_border_width, edgecolor='black', facecolor='none')
+    else:
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        coastline_width = 0.8
+        country_border_width = 0.2
+        alpha = 0.6
+        markersize = 5.8
+
+        ax.add_feature(cfeature.COASTLINE, linewidth=0.7)
+        ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+
+    ax.add_feature(cfeature.OCEAN)
+
+    data.plot(ax=ax, column="color", markersize=markersize, alpha=alpha)
+
+    ax.spines['geo'].set_linestyle('-')
+    ax.spines['geo'].set_color('none')
+    
+    ax.set_title(f"Avalanches from {degree} degree causal graphs in on dt={dt}, dx={dx}")
+
+    ax.set_extent(set_ax(f"{country}"))
+    
+    if save:
+        plt.savefig(f"Results/plots/avalanches/avalanches_d{degree}_dt{dt}_dx{dx}.png")
+
+    return ax
+
 
 # Copulas
 def fit_and_log_likelihood(dist_name, data):

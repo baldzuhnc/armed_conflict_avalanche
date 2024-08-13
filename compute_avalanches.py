@@ -1,3 +1,8 @@
+# ====================================================================================== #
+# Module for pipelineing the construction of avalanches from conflict data.
+# Author: Clemens Baldzuhn
+# ====================================================================================== #
+
 import os
 os.chdir('/home/clemens/armed_conflict_avalanche/')
 

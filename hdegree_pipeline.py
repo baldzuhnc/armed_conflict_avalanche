@@ -1,4 +1,8 @@
-#imports
+# ====================================================================================== #
+# Module for pipelineing the analysis of causal graphs with higher network degrees.
+# Author: Clemens Baldzuhn
+# ====================================================================================== #
+
 import os
 os.chdir('/home/clemens/armed_conflict_avalanche/')
 import sys

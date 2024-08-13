@@ -1,3 +1,8 @@
+# ====================================================================================== #
+# Module for pipelineing the analysis of causal graphs with neighborhood triplets.
+# Author: Clemens Baldzuhn
+# ====================================================================================== #
+
 #imports
 import os
 os.chdir('/home/clemens/armed_conflict_avalanche/')
@@ -9,7 +14,6 @@ import tqdm
 from arcolanche.pipeline import *
 import statsmodels.api as sm
  
-#mapshit
 from shapely.geometry import LineString
 import json
 from keplergl import KeplerGl
@@ -54,7 +58,6 @@ def plot_save_ecdf(t,s, significant_pairs, significant_triples):
     #SAVE PLOT IN FIGURES
     plt.savefig(f"Results/triples_vs_pairs/TE_CDF_dt{t}_dx{s}.png")
     plt.close()
-
 
 
 def save_map(t, s, polygons, significant_pairs, significant_triples):
@@ -124,8 +127,6 @@ def save_map(t, s, polygons, significant_pairs, significant_triples):
     map_.save_to_html(file_name=f'Results/kepler_triples/kepler_d{degree}_dt{t}_dx{s}.html')
 
 
-
-
 #######################################################
 ###################### Run ############################
 #######################################################
@@ -134,7 +135,7 @@ conflict_type = "battles"
 gridix = 3
 degree = 1
 
-dt = [64]
+dt = [16, 32]
 dx = [320]
 
 #run avalanches for different scales, 
@@ -156,9 +157,9 @@ for t in tqdm.tqdm(dt):
 
         significant_pairs, significant_triples = extract_significant_edges(ava_pairs.pair_edges, ava_triples.pair_edges)
         
-        #plot_save_ecdf(t,s,significant_pairs, significant_triples)
+        plot_save_ecdf(t,s,significant_pairs, significant_triples)
         
-        #save_map(t, s, ava_pairs.polygons, significant_pairs, significant_triples)
+        save_map(t, s, ava_pairs.polygons, significant_pairs, significant_triples)
         
         end_time = time.time()    
         print(f"dt:{t}, Time taken: {int((end_time - start_time) / 60)} minutes {int((end_time - start_time) % 60)} seconds")

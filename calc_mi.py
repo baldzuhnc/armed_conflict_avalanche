@@ -1,3 +1,11 @@
+# ====================================================================================== #
+# Module for pipelining the analysis of long-range correlations using mutual information and transfer entropy.
+# Mutual information is calculated between all pairs of polygons. A threshold extracts the pairs with the highest MI 
+# which are then treated as neighbours in the construction of the causal graph.
+
+# Author: Clemens Baldzuhn
+# ====================================================================================== #
+
 import os
 os.chdir('/home/clemens/armed_conflict_avalanche/')
 import sys

@@ -1,7 +1,7 @@
 # ====================================================================================== #
 # Module for construction conflict avalanches such as discretizing conflicts to spatial
 # and temporal bins and connecting them to one another.
-# Author: Eddie Lee, Niraj Kushwaha
+# Author: Eddie Lee, Niraj Kushwaha, Clemens Baldzuhn
 # ====================================================================================== #
 from voronoi_globe.interface import load_voronoi
 from shapely.geometry import Point
@@ -95,6 +95,7 @@ class Avalanche():
         
         #====================================== If size provided, subset #======================================
         #if size is provided to avalanche construction: construct subset from centroid 7311 of size
+        # will only work on mesoscale = (32,453,3) #(dt, dx, gridix) !!
         # Avalanche construction will not work if size is provided
         if size:
             # filter polygons dataframe
@@ -159,6 +160,8 @@ class Avalanche():
         shuffles : int, 100
         """
 
+        self.mi_edges = calculate_mi_tuples(self.time_series_CG_matrix, self.mi_threshold)
+        
         self.self_edges = self_links(self.time_series_CG_matrix, number_of_shuffles=shuffles)
         self.pair_edges = links(self.time_series_CG_matrix, 
                                 self.polygons.drop('geometry' , axis=1), 
@@ -167,6 +170,8 @@ class Avalanche():
                                 mi_connections=self.mi_connections,
                                 mi_threshold = self.mi_threshold,
                                 triples = self.triples) #triples
+        
+        
         
         
         self.causal_graph = CausalGraph() 
