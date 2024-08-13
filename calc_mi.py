@@ -5,6 +5,8 @@ import time
 
 from arcolanche.pipeline import *
 
+import networkx as nx
+
 #mapshit
 from shapely.geometry import LineString
 import json
@@ -25,10 +27,12 @@ def calculate_sig_ratio(sig_mi_tuples, te_tuples):
     all_mi_in_te = all([x in all_te_tuples for x in sig_mi_tuples])
     ratio_sig = len([x for x in sig_mi_tuples if x in sig_te_tuples]) / len(sig_mi_tuples)
 
-    with open('Results/sig_ratio.txt', 'w') as file:
+    # Use 'a' mode to append instead of overwriting
+    with open('Results/mi_sig_ratio.txt', 'a') as file:
         file.write(f"dt={t}, dx={s}\n")
         file.write(f"All MI tuples in TE: {all_mi_in_te}\n")
         file.write(f"Ratio of MI tuples significant in TE: {ratio_sig:.3f}\n")
+
 
 def calculate_significant_edges(self_edges, pair_edges, summary = False):
         
@@ -64,8 +68,6 @@ def calculate_significant_edges(self_edges, pair_edges, summary = False):
     
     else:
         return significant_edges
-
-
 
 
 def save_map(t, s, polygons, significant_edges): 
@@ -141,9 +143,12 @@ for t in tqdm.tqdm(dt):
         self_edges = ava_mi.self_edges
         pair_edges = ava_mi.pair_edges
         
-        #print ratio of significant edges
-        #calculate_sig_ratio(sig_mi_edges, pair_edges)
-
+        calculate_sig_ratio(sig_mi_edges, pair_edges)
+        
+        #save graph
+        G = ava_mi.causal_graph
+        nx.write_graphml(G, f"Results/mi{mi_threshold}_d{degree}_dt{t}_dx{s}.graphml")
+    
         significant_edges = calculate_significant_edges(self_edges, pair_edges, summary = False)
 
         save_map(t, s, ava_mi.polygons, significant_edges)
