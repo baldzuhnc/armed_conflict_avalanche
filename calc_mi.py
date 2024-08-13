@@ -13,6 +13,22 @@ from keplergl import KeplerGl
 import tqdm
 
 
+def calculate_sig_ratio(sig_mi_tuples, te_tuples):
+    all_te_tuples = []
+    sig_te_tuples = []
+
+    for poly, (te, te_shuffle) in te_tuples.items():
+        all_te_tuples.append((poly[0], poly[1]))
+        if (te > te_shuffle).mean() >= (95 / 100):
+            sig_te_tuples.append((poly[0], poly[1]))
+
+    all_mi_in_te = all([x in all_te_tuples for x in sig_mi_tuples])
+    ratio_sig = len([x for x in sig_mi_tuples if x in sig_te_tuples]) / len(sig_mi_tuples)
+
+    with open('Results/sig_ratio.txt', 'w') as file:
+        file.write(f"dt={t}, dx={s}\n")
+        file.write(f"All MI tuples in TE: {all_mi_in_te}\n")
+        file.write(f"Ratio of MI tuples significant in TE: {ratio_sig:.3f}\n")
 
 def calculate_significant_edges(self_edges, pair_edges, summary = False):
         
@@ -49,8 +65,9 @@ def calculate_significant_edges(self_edges, pair_edges, summary = False):
     else:
         return significant_edges
 
- 
- 
+
+
+
 def save_map(t, s, polygons, significant_edges): 
     map_ = KeplerGl()
     
@@ -83,7 +100,7 @@ def save_map(t, s, polygons, significant_edges):
     map_.add_data(data=json.loads(polygons_geojson), name=f'Polygons, dx={s}')
     
     # Save the map as HTML or display it
-    map_.save_to_html(file_name=f'Results/kepler_mi{mi_threshold}_d{degree}_dt{t}_dx{s}.html')
+    map_.save_to_html(file_name=f'Results/kepler_mi/kepler_mi{mi_threshold}_d{degree}_dt{t}_dx{s}.html')
 
  
 # ==================== # RUN # ==================== #
@@ -119,9 +136,13 @@ for t in tqdm.tqdm(dt):
                         shuffle_null=False,
                         year_range=False)
 
+        sig_mi_edges = ava_mi.mi_edges
+        
         self_edges = ava_mi.self_edges
         pair_edges = ava_mi.pair_edges
-
+        
+        #print ratio of significant edges
+        #calculate_sig_ratio(sig_mi_edges, pair_edges)
 
         significant_edges = calculate_significant_edges(self_edges, pair_edges, summary = False)
 
