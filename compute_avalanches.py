@@ -22,7 +22,7 @@ def save_avalanche(ava, conflict_type, gridix, dt, dx, degree):
 
 
 conflict_type = "battles"
-dt = 64
+dt = 32
 dx = 320
 gridix = 3
 degree = [1,2,3,4,5]

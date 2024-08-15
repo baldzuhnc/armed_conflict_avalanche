@@ -77,7 +77,7 @@ def get_ids_from_centroid(df, size, centroid):
                 neighbors = list(set(new_neighbors))
             return neighbors
 
-def plot_cells(cell_ids, scale, conflict_type, verbose=False):
+def plot_cells(cell_ids, scale, conflict_type, verbose=False, title = None):
     warnings.filterwarnings("ignore", message="Geometry is in a geographic CRS. Results from 'centroid' are likely incorrect.")
     
     dt, dx, gridix = scale
@@ -109,6 +109,9 @@ def plot_cells(cell_ids, scale, conflict_type, verbose=False):
     ax.add_feature(cfeature.LAND)
     #ax.add_feature(cfeature.OCEAN)
     ax.add_feature(cfeature.RIVERS)
+    
+    if title:
+        ax.set_title(title, fontsize=15)
 
 
     ax.set_extent(set_ax("All"))
@@ -200,7 +203,7 @@ def plot_avalanches(avalanche, dt, dx, gridix, conflict_type, degree, save=False
     ax.spines['geo'].set_linestyle('-')
     ax.spines['geo'].set_color('none')
     
-    ax.set_title(f"Avalanches from {degree} degree causal graphs in on dt={dt}, dx={dx}")
+    ax.set_title(f"Avalanches from causal graph up until {degree}. degree. Scale: dt={dt}, dx={dx}", fontsize=21    )
 
     ax.set_extent(set_ax(f"{country}"))
     
