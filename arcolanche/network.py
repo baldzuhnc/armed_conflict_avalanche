@@ -123,7 +123,7 @@ def calculate_mi_tuples(time_series, threshold):
     return highest_mi_tuples
 
 
-def get_adjancency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold):
+def get_adjacency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold):
     
     # mi connections
     highest_mi_tuples = calculate_mi_tuples(time_series, mi_threshold)
@@ -190,7 +190,7 @@ def get_tuples(neighbor_info_dataframe, time_series, degree):
 def get_mi_tuples(neighbor_info_dataframe, time_series, degree, mi_threshold):
     
     #first degree connections
-    adjacency_matrix = get_adjancency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold)
+    adjacency_matrix = get_adjacency_matrix_mi(neighbor_info_dataframe, time_series, mi_threshold)
     
     # Convert the adjacency matrix to CSR format for efficient matmul (also done implicitly)
     adjacency_matrix = adjacency_matrix.tocsr()
