@@ -203,7 +203,7 @@ def plot_avalanches(avalanche, dt, dx, gridix, conflict_type, degree, save=False
     ax.spines['geo'].set_linestyle('-')
     ax.spines['geo'].set_color('none')
     
-    ax.set_title(f"Avalanches from causal graph up until {degree}. degree. Scale: dt={dt}, dx={dx}", fontsize=21    )
+    ax.set_title(f"Avalanches from CG with degree={degree} (dt={dt}, dx={dx})", fontsize=21)
 
     ax.set_extent(set_ax(f"{country}"))
     
@@ -314,3 +314,10 @@ def open_avalanche(conflict_type, gridix, dt, dx, degree):
     with open(path, 'rb') as file:
         data = pickle.load(file)
     return data
+
+
+
+
+
+
+
