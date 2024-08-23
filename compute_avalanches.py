@@ -22,10 +22,10 @@ def save_avalanche(ava, conflict_type, gridix, dt, dx, degree):
 
 
 conflict_type = "battles"
-dt = 32
+dt = 64
 dx = 320
 gridix = 3
-degree = [1,2,3,4,5]
+degree = np.arange(1,17,1)
 
 for d in degree:
     ava = Avalanche(dt = dt, dx = dx, gridix=gridix, degree=d, setup_causalgraph=True, construct_avalanche=True)
