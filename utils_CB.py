@@ -203,7 +203,7 @@ def plot_avalanches(avalanche, dt, dx, gridix, conflict_type, degree, save=False
     ax.spines['geo'].set_linestyle('-')
     ax.spines['geo'].set_color('none')
     
-    ax.set_title(f"Avalanches from CG with degree={degree} (dt={dt}, dx={dx})", fontsize=21)
+    ax.set_title(f"Avalanches from CG with degree={degree}", fontsize=34)
 
     ax.set_extent(set_ax(f"{country}"))
     
